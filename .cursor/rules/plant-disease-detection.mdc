@@ -1,0 +1,63 @@
+---
+description: Plant Disease Detection Project Guidelines
+globs: ["**/*.py", "**/*.md", "**/*.toml"]
+alwaysApply: true
+---
+
+# Plant Disease Detection Project
+
+## Project Overview
+This project builds a CNN-based plant disease detection model specifically designed for Indian farmers, with a Streamlit demo application.
+
+## Technology Stack
+- **Dependency Management**: uv (Python package manager)
+- **ML Framework**: PyTorch with torchvision
+- **Web Framework**: Streamlit
+- **Image Processing**: PIL, OpenCV
+- **Data Handling**: pandas, numpy
+
+## Code Standards
+- Use type hints for all function parameters and return values
+- Follow PEP 8 style guidelines
+- Use docstrings for all functions and classes
+- Prefer functional programming where appropriate
+- Use pathlib for file path operations
+
+## Model Architecture
+- Use CNN-based architecture suitable for image classification
+- Implement data augmentation for better generalization
+- Use transfer learning with pre-trained models (ResNet, EfficientNet)
+- Support for common Indian crop diseases (rice, wheat, maize, etc.)
+
+## File Organization
+- `src/` - Main source code
+- `data/` - Dataset and data utilities
+- `models/` - Model definitions and training scripts
+- `streamlit_app/` - Streamlit application
+- `notebooks/` - Jupyter notebooks for experimentation
+- `tests/` - Unit tests
+
+## Data Handling
+- Support for common image formats (JPG, PNG)
+- Implement proper data validation
+- Use appropriate image preprocessing (resize, normalize)
+- Handle class imbalance with appropriate techniques
+
+## Streamlit App Features
+- Image upload interface
+- Real-time prediction display
+- Confidence scores and disease information
+- Mobile-friendly design for farmers
+- Support for multiple languages (English, Hindi)
+
+## Performance Considerations
+- Optimize model size for deployment
+- Implement caching for better performance
+- Use appropriate image resolution (224x224 or 299x299)
+- Consider quantization for mobile deployment
+
+## Documentation
+- Include comprehensive README with setup instructions
+- Document model performance metrics
+- Provide examples of supported diseases
+- Include troubleshooting guide
