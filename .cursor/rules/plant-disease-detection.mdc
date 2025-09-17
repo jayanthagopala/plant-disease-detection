@@ -4,17 +4,24 @@ globs: ["**/*.py", "**/*.md", "**/*.toml"]
 alwaysApply: true
 ---
 
-# Plant Disease Detection Project
+# Smart Crop Advisory System - College Project
 
 ## Project Overview
-This project builds a CNN-based plant disease detection model specifically designed for Indian farmers, with a Streamlit demo application.
+This is a college project building a Smart Crop Advisory System for small and marginal farmers in India. The system provides personalized, real-time, and localized crop advisories using AI, weather data, and image recognition. The project focuses on pest & disease detection as the core ML component, with a Streamlit demo application.
+
+## Project Context
+- **Theme**: Agriculture, FoodTech & Rural Development
+- **Problem Statement ID**: 25010
+- **Target Users**: Small and marginal farmers (86% of Indian farmers)
+- **Primary Goal**: Increase crop yield by 20-30% through AI-powered advisories
 
 ## Technology Stack
 - **Dependency Management**: uv (Python package manager)
-- **ML Framework**: PyTorch with torchvision
-- **Web Framework**: Streamlit
+- **ML Framework**: PyTorch with torchvision for disease detection
+- **Web Framework**: Streamlit (demo application)
 - **Image Processing**: PIL, OpenCV
 - **Data Handling**: pandas, numpy
+- **Future**: Android app, weather APIs, market price APIs
 
 ## Code Standards
 - Use type hints for all function parameters and return values
@@ -22,42 +29,66 @@ This project builds a CNN-based plant disease detection model specifically desig
 - Use docstrings for all functions and classes
 - Prefer functional programming where appropriate
 - Use pathlib for file path operations
+- Focus on code clarity for academic presentation
+
+## Core Features (College Project Scope)
+1. **Pest & Disease Detection** (Primary ML component)
+   - CNN-based image classification
+   - Support for common Indian crop diseases
+   - Real-time prediction with confidence scores
+2. **Multilingual Support** (English, Hindi for demo)
+3. **Mobile-friendly Interface** (Streamlit responsive design)
+4. **Educational Documentation** (Comprehensive for academic review)
 
 ## Model Architecture
 - Use CNN-based architecture suitable for image classification
 - Implement data augmentation for better generalization
 - Use transfer learning with pre-trained models (ResNet, EfficientNet)
 - Support for common Indian crop diseases (rice, wheat, maize, etc.)
+- Focus on accuracy and interpretability for academic presentation
 
 ## File Organization
 - `src/` - Main source code
 - `data/` - Dataset and data utilities
 - `models/` - Model definitions and training scripts
-- `streamlit_app/` - Streamlit application
-- `notebooks/` - Jupyter notebooks for experimentation
+- `streamlit_app/` - Streamlit demo application
+- `notebooks/` - Jupyter notebooks for experimentation and analysis
 - `tests/` - Unit tests
+- `docs/` - Academic documentation and reports
 
 ## Data Handling
 - Support for common image formats (JPG, PNG)
 - Implement proper data validation
 - Use appropriate image preprocessing (resize, normalize)
 - Handle class imbalance with appropriate techniques
+- Document data sources and preprocessing steps for academic review
 
-## Streamlit App Features
-- Image upload interface
-- Real-time prediction display
-- Confidence scores and disease information
+## Streamlit App Features (Demo)
+- Image upload interface for disease detection
+- Real-time prediction display with confidence scores
+- Disease information and treatment recommendations
 - Mobile-friendly design for farmers
 - Support for multiple languages (English, Hindi)
+- Educational content about crop diseases
+
+## Academic Considerations
+- Focus on model interpretability and explainability
+- Document all design decisions and trade-offs
+- Include comprehensive performance metrics
+- Prepare for academic presentation and review
+- Emphasize the social impact for Indian farmers
 
 ## Performance Considerations
 - Optimize model size for deployment
 - Implement caching for better performance
 - Use appropriate image resolution (224x224 or 299x299)
 - Consider quantization for mobile deployment
+- Document performance benchmarks
 
-## Documentation
+## Documentation (Academic Focus)
 - Include comprehensive README with setup instructions
-- Document model performance metrics
-- Provide examples of supported diseases
+- Document model performance metrics and evaluation
+- Provide examples of supported diseases with images
 - Include troubleshooting guide
+- Prepare academic report with methodology and results
+- Document social impact and farmer benefits
