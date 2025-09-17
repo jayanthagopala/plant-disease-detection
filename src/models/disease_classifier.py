@@ -187,24 +187,123 @@ class DiseaseClassifier:
         """
         # This would typically come from a database or config file
         disease_info = {
+            # Rice diseases
             "rice_blast": {
                 "name": "Rice Blast",
                 "symptoms": "Small, diamond-shaped lesions on leaves, stems, and panicles",
                 "treatment": "Use resistant varieties, proper water management, fungicide application",
                 "prevention": "Avoid excessive nitrogen, maintain proper spacing, crop rotation"
             },
+            "rice_healthy": {
+                "name": "Healthy Rice",
+                "symptoms": "No visible disease symptoms",
+                "treatment": "Continue current care practices",
+                "prevention": "Maintain good agricultural practices"
+            },
+            
+            # Wheat diseases
             "wheat_rust": {
                 "name": "Wheat Rust",
                 "symptoms": "Orange or yellow pustules on leaves and stems",
                 "treatment": "Fungicide application, resistant varieties",
                 "prevention": "Crop rotation, proper field sanitation, early planting"
             },
-            "maize_leaf_blight": {
-                "name": "Maize Leaf Blight",
-                "symptoms": "Large, tan lesions on leaves with dark borders",
-                "treatment": "Fungicide application, resistant varieties",
-                "prevention": "Crop rotation, proper irrigation, field sanitation"
+            "wheat_healthy": {
+                "name": "Healthy Wheat",
+                "symptoms": "No visible disease symptoms",
+                "treatment": "Continue current care practices",
+                "prevention": "Maintain good agricultural practices"
             },
+            
+            # Corn/Maize diseases
+            "corn_common_rust": {
+                "name": "Corn Common Rust",
+                "symptoms": "Small, round to elongated pustules on leaves",
+                "treatment": "Fungicide application, resistant varieties",
+                "prevention": "Crop rotation, proper spacing, field sanitation"
+            },
+            "corn_healthy": {
+                "name": "Healthy Corn",
+                "symptoms": "No visible disease symptoms",
+                "treatment": "Continue current care practices",
+                "prevention": "Maintain good agricultural practices"
+            },
+            
+            # Potato diseases
+            "potato_early_blight": {
+                "name": "Potato Early Blight",
+                "symptoms": "Dark brown spots with concentric rings on leaves",
+                "treatment": "Fungicide application, proper irrigation",
+                "prevention": "Crop rotation, remove infected debris, proper spacing"
+            },
+            "potato_late_blight": {
+                "name": "Potato Late Blight",
+                "symptoms": "Water-soaked lesions that turn brown and necrotic",
+                "treatment": "Fungicide application, resistant varieties",
+                "prevention": "Proper drainage, crop rotation, avoid overhead irrigation"
+            },
+            "potato_healthy": {
+                "name": "Healthy Potato",
+                "symptoms": "No visible disease symptoms",
+                "treatment": "Continue current care practices",
+                "prevention": "Maintain good agricultural practices"
+            },
+            
+            # Tomato diseases
+            "tomato_bacterial_spot": {
+                "name": "Tomato Bacterial Spot",
+                "symptoms": "Small, dark, water-soaked spots on leaves and fruits",
+                "treatment": "Copper-based fungicides, resistant varieties",
+                "prevention": "Crop rotation, proper spacing, avoid overhead irrigation"
+            },
+            "tomato_early_blight": {
+                "name": "Tomato Early Blight",
+                "symptoms": "Dark brown spots with concentric rings on lower leaves",
+                "treatment": "Fungicide application, proper pruning",
+                "prevention": "Crop rotation, remove infected debris, proper spacing"
+            },
+            "tomato_late_blight": {
+                "name": "Tomato Late Blight",
+                "symptoms": "Water-soaked lesions that rapidly expand",
+                "treatment": "Fungicide application, resistant varieties",
+                "prevention": "Proper drainage, avoid overhead irrigation, crop rotation"
+            },
+            "tomato_healthy": {
+                "name": "Healthy Tomato",
+                "symptoms": "No visible disease symptoms",
+                "treatment": "Continue current care practices",
+                "prevention": "Maintain good agricultural practices"
+            },
+            
+            # Apple diseases
+            "apple_scab": {
+                "name": "Apple Scab",
+                "symptoms": "Dark, scaly lesions on leaves and fruits",
+                "treatment": "Fungicide application, resistant varieties",
+                "prevention": "Proper pruning, remove fallen leaves, good air circulation"
+            },
+            "apple_healthy": {
+                "name": "Healthy Apple",
+                "symptoms": "No visible disease symptoms",
+                "treatment": "Continue current care practices",
+                "prevention": "Maintain good agricultural practices"
+            },
+            
+            # Grape diseases
+            "grape_black_rot": {
+                "name": "Grape Black Rot",
+                "symptoms": "Circular, reddish-brown spots on leaves and fruits",
+                "treatment": "Fungicide application, proper pruning",
+                "prevention": "Good air circulation, remove infected material, proper spacing"
+            },
+            "grape_healthy": {
+                "name": "Healthy Grape",
+                "symptoms": "No visible disease symptoms",
+                "treatment": "Continue current care practices",
+                "prevention": "Maintain good agricultural practices"
+            },
+            
+            # General healthy plant
             "healthy": {
                 "name": "Healthy Plant",
                 "symptoms": "No visible disease symptoms",

@@ -285,7 +285,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.5, patience=5, verbose=True
+        optimizer, mode='min', factor=0.5, patience=5
     )
     
     # Early stopping
@@ -378,15 +378,20 @@ def main():
         'model_name': args.model_name,
         'num_classes': num_classes,
         'class_names': class_names,
-        'best_val_accuracy': best_val_acc,
-        'test_accuracy': test_results['accuracy'],
+        'best_val_accuracy': float(best_val_acc),
+        'test_accuracy': float(test_results['accuracy']),
         'training_history': {
-            'train_losses': train_losses,
-            'val_losses': val_losses,
-            'train_accuracies': train_accs,
-            'val_accuracies': val_accs
+            'train_losses': [float(x) for x in train_losses],
+            'val_losses': [float(x) for x in val_losses],
+            'train_accuracies': [float(x) for x in train_accs],
+            'val_accuracies': [float(x) for x in val_accs]
         },
-        'test_results': test_results
+        'test_results': {
+            'accuracy': float(test_results['accuracy']),
+            'predictions': [int(x) for x in test_results['predictions']],
+            'labels': [int(x) for x in test_results['labels']],
+            'confusion_matrix': test_results['confusion_matrix']
+        }
     }
     
     with open(output_dir / "training_results.json", 'w') as f:
