@@ -6,6 +6,7 @@ from plotly.subplots import make_subplots
 import pandas as pd
 from typing import List, Dict, Tuple
 import numpy as np
+from PIL import Image
 
 
 def create_confidence_gauge(confidence: float, title: str = "Confidence Score") -> go.Figure:
@@ -298,3 +299,125 @@ def create_footer() -> None:
         <p>🌱 Plant Disease Detection System | Built for Indian Farmers | Powered by AI</p>
     </div>
     """, unsafe_allow_html=True)
+
+
+def create_demo_banner() -> None:
+    """Create a demo banner for the mock version."""
+    st.markdown("""
+    <div style="background-color: #e1f5fe; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; border-left: 5px solid #0277bd;">
+        <h4 style="color: #0277bd; margin: 0;">🚀 Demo Mode</h4>
+        <p style="margin: 0.5rem 0 0 0; color: #01579b;">This is a demonstration using mock data. Upload any image to see how the system works!</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def create_crop_selector() -> str:
+    """Create a crop type selector component."""
+    st.markdown("#### 🌾 Select Crop Type")
+    
+    crops = ["rice", "wheat", "tomato", "potato"]
+    selected_crop = st.selectbox(
+        "Choose the crop type for better predictions:",
+        crops,
+        help="Selecting the correct crop type improves prediction accuracy"
+    )
+    
+    return selected_crop
+
+
+def create_image_preview(image: Image.Image) -> None:
+    """Create an enhanced image preview component."""
+    st.markdown("#### 📷 Image Preview")
+    
+    # Resize image for better display
+    display_image = image.copy()
+    if display_image.width > 400 or display_image.height > 400:
+        display_image.thumbnail((400, 400), Image.Resampling.LANCZOS)
+    
+    st.image(display_image, caption="Uploaded Image", use_column_width=True)
+    
+    # Image statistics
+    st.markdown("##### Image Statistics")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Width", f"{image.width}px")
+        st.metric("Height", f"{image.height}px")
+    
+    with col2:
+        st.metric("Aspect Ratio", f"{image.width/image.height:.2f}")
+        st.metric("Total Pixels", f"{image.width * image.height:,}")
+    
+    with col3:
+        st.metric("Format", image.format or "Unknown")
+        st.metric("Mode", image.mode)
+
+
+def create_prediction_summary(predictions: List[Dict[str, float]]) -> None:
+    """Create a summary of prediction results."""
+    if not predictions:
+        st.warning("No predictions available")
+        return
+    
+    top_pred = predictions[0]
+    
+    # Confidence level indicator
+    confidence = top_pred['confidence']
+    if confidence > 0.8:
+        confidence_level = "High"
+        confidence_color = "green"
+        confidence_icon = "🟢"
+    elif confidence > 0.6:
+        confidence_level = "Medium"
+        confidence_color = "orange"
+        confidence_icon = "🟡"
+    else:
+        confidence_level = "Low"
+        confidence_color = "red"
+        confidence_icon = "🔴"
+    
+    st.markdown(f"""
+    <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 10px; margin: 1rem 0;">
+        <h4 style="margin: 0 0 0.5rem 0;">{confidence_icon} Top Prediction</h4>
+        <h3 style="margin: 0 0 0.5rem 0; color: {confidence_color};">{top_pred['class_name'].replace('_', ' ').title()}</h3>
+        <p style="margin: 0;"><strong>Confidence:</strong> <span style="color: {confidence_color};">{confidence:.1%}</span> ({confidence_level})</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def create_quick_actions() -> None:
+    """Create quick action buttons."""
+    st.markdown("#### ⚡ Quick Actions")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("📊 View All Predictions", use_container_width=True):
+            st.session_state.show_all_predictions = True
+    
+    with col2:
+        if st.button("📋 Disease Info", use_container_width=True):
+            st.session_state.show_disease_info = True
+    
+    with col3:
+        if st.button("🔄 New Analysis", use_container_width=True):
+            st.session_state.clear_analysis = True
+
+
+def create_mobile_friendly_header() -> None:
+    """Create a mobile-friendly header."""
+    st.markdown("""
+    <style>
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2rem !important;
+        }
+        .sub-header {
+            font-size: 1.2rem !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<h1 class="main-header">🌱 Plant Disease Detection</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">AI-powered disease detection for Indian farmers</p>', unsafe_allow_html=True)
