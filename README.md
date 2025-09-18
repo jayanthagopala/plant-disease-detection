@@ -9,6 +9,11 @@ A deep learning-based plant disease detection system specifically designed for I
 - **Multi-crop Support**: Covers major Indian crops (Rice, Wheat, Maize, Tomato, Potato, etc.)
 - **Real-time Predictions**: Instant disease detection with confidence scores
 - **Treatment Recommendations**: Provides symptoms, treatment, and prevention advice
+- **Real-time Weather Data**: Live weather information and forecasts for farming decisions
+- **Weather Alerts**: Intelligent alerts for extreme weather conditions
+- **Crop-specific Recommendations**: Weather-based advice tailored to different crops
+- **Multilingual Support**: English, Hindi, and Kannada language support
+- **Market Price Tracking**: Real-time crop price information and trends
 - **Sample Dataset**: Includes sample data for testing and demonstration
 - **Easy Setup**: Simple installation and configuration using `uv`
 
@@ -31,8 +36,13 @@ A deep learning-based plant disease detection system specifically designed for I
    ```bash
    uv sync
    ```
+   
+   This will automatically:
+   - Create a virtual environment
+   - Install all dependencies from `pyproject.toml`
+   - Install development dependencies if needed
 
-3. **Activate the virtual environment:**
+3. **Activate the virtual environment (optional):**
    ```bash
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
@@ -51,12 +61,22 @@ A deep learning-based plant disease detection system specifically designed for I
 
 2. **Open your browser** and navigate to `http://localhost:8501`
 
+## 📚 Documentation
+
+- **[Product Requirements Document](docs/PRD.md)** - Detailed project specifications and requirements
+- **[Weather API Guide](docs/WEATHER_API_GUIDE.md)** - Comprehensive weather API documentation
+- **[PlantVillage Setup](docs/PLANTVILLAGE_SETUP.md)** - Dataset setup and configuration guide
+
 ## 🏗️ Project Structure
 
 ```
 plant-disease-detection/
 ├── .cursor/
 │   └── rules/                    # Cursor IDE rules
+├── docs/                        # Documentation
+│   ├── PRD.md                   # Product Requirements Document
+│   ├── WEATHER_API_GUIDE.md     # Weather API documentation
+│   └── PLANTVILLAGE_SETUP.md    # Dataset setup guide
 ├── src/
 │   ├── models/                   # Model definitions
 │   │   ├── cnn_model.py         # CNN architecture
@@ -67,14 +87,22 @@ plant-disease-detection/
 │   │   └── utils.py             # Data utilities
 │   ├── streamlit_app/           # Streamlit application
 │   │   ├── app.py              # Main app
-│   │   └── components.py       # Custom components
+│   │   ├── components.py       # Custom components
+│   │   ├── weather_service.py  # Weather API service
+│   │   ├── market_service.py   # Market price service
+│   │   └── translations.py     # Multilingual support
 │   └── train.py                 # Training script
 ├── data/                        # Dataset directory
 ├── outputs/                     # Model outputs and results
 ├── notebooks/                   # Jupyter notebooks
 ├── tests/                       # Unit tests
-├── pyproject.toml              # Project configuration
+│   ├── test_data.py            # Data utilities tests
+│   ├── test_model.py           # Model testing
+│   ├── test_models.py          # Model architecture tests
+│   └── test_new_features.py    # New features integration tests
+├── pyproject.toml              # Project configuration and dependencies
 ├── run_app.py                  # App launcher
+├── run_tests.py                # Test runner script
 └── README.md                   # This file
 ```
 
@@ -179,6 +207,24 @@ uv run python src/train.py --create_sample --data_dir data/sample_data
 
 ## 🛠️ Development
 
+### Dependency Management
+
+This project uses `pyproject.toml` for dependency management with `uv`. No `requirements.txt` file is needed.
+
+**Main dependencies** (installed with `uv sync`):
+- PyTorch & Torchvision for deep learning
+- Streamlit for web interface
+- OpenCV, PIL for image processing
+- Pandas, NumPy for data handling
+- Requests for API calls
+- Plotly for visualizations
+
+**Development dependencies** (installed with `uv sync --extra dev`):
+- pytest for testing
+- black, isort for code formatting
+- mypy for type checking
+- flake8 for linting
+
 ### Setting up Development Environment
 
 1. **Install development dependencies:**
@@ -188,6 +234,14 @@ uv run python src/train.py --create_sample --data_dir data/sample_data
 
 2. **Run tests:**
    ```bash
+   # Run all tests using the test runner
+   uv run python run_tests.py
+   
+   # Run specific test files
+   uv run python tests/test_model.py
+   uv run python tests/test_new_features.py
+   
+   # Run with pytest (if installed)
    uv run pytest tests/
    ```
 
@@ -258,11 +312,14 @@ For support and questions:
 ## 🔮 Future Enhancements
 
 - [ ] Mobile app development
-- [ ] Multi-language support (Hindi, regional languages)
-- [ ] Integration with weather data
+- [x] Multi-language support (Hindi, Kannada) - **Implemented**
+- [x] Integration with weather data - **Implemented**
 - [ ] Real-time disease monitoring
 - [ ] Farmer community features
 - [ ] Expert consultation integration
+- [ ] Soil moisture integration
+- [ ] Pest prediction based on weather
+- [ ] Automated irrigation scheduling
 
 ---
 

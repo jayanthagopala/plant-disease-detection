@@ -8,7 +8,7 @@ from PIL import Image
 import numpy as np
 
 # Add src to path
-sys.path.append(str(Path(__file__).parent / "src"))
+sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from models.disease_classifier import DiseaseClassifier
 

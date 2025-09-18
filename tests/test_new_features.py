@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 # Add src to path
-sys.path.append(str(Path(__file__).parent / "src"))
+sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 def test_translations():
     """Test translation functionality."""
@@ -28,8 +28,8 @@ def test_translations():
     print("✅ Translations working correctly!")
 
 def test_weather_service():
-    """Test weather service functionality."""
-    print("Testing weather service...")
+    """Test enhanced weather service functionality."""
+    print("Testing enhanced weather service...")
     
     from streamlit_app.weather_service import WeatherService, create_mock_weather_data, get_weather_recommendations
     
@@ -43,7 +43,29 @@ def test_weather_service():
     recommendations = get_weather_recommendations(mock_data, "rice")
     assert isinstance(recommendations, list)
     
-    print("✅ Weather service working correctly!")
+    # Test real weather service
+    weather = WeatherService()
+    
+    # Test coordinate fallback
+    coords = weather.get_coordinates("Bangalore", "Karnataka", "India")
+    assert coords is not None
+    assert "latitude" in coords
+    assert "longitude" in coords
+    
+    # Test comprehensive weather data
+    comprehensive_data = weather.get_comprehensive_weather_data("Bangalore", "Karnataka", "India")
+    if comprehensive_data:  # Only test if API call succeeds
+        assert "location" in comprehensive_data
+        assert "current" in comprehensive_data
+        assert "forecast" in comprehensive_data
+        assert "historical" in comprehensive_data
+        assert "alerts" in comprehensive_data
+        
+        # Test weather recommendations with real data
+        real_recommendations = get_weather_recommendations(comprehensive_data, "rice")
+        assert isinstance(real_recommendations, list)
+    
+    print("✅ Enhanced weather service working correctly!")
 
 def test_market_service():
     """Test market service functionality."""
@@ -93,11 +115,15 @@ def main():
         print("🎉 All tests passed! New features are working correctly.")
         print("\nNew features added:")
         print("✅ Multilingual support (English, Hindi, Kannada)")
-        print("✅ Weather forecast and recommendations")
+        print("✅ Real-time weather data from Open-Meteo API")
+        print("✅ 7-day weather forecast with detailed parameters")
+        print("✅ 7-day historical weather data")
+        print("✅ Intelligent weather alerts and recommendations")
+        print("✅ Crop-specific weather analysis")
         print("✅ Market price tracking and trends")
         print("✅ Enhanced UI with 5 tabs")
-        print("✅ Location-based weather data")
-        print("✅ Crop-specific market analysis")
+        print("✅ Fallback coordinates for major Indian cities")
+        print("✅ Weather trend analysis and humidity monitoring")
         
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
