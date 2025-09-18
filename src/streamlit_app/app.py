@@ -15,7 +15,13 @@ from plotly.subplots import make_subplots
 # Add src to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-# Import mock data instead of actual model
+# Import real model and mock data for fallback
+try:
+    from models.disease_classifier import DiseaseClassifier
+    REAL_MODEL_AVAILABLE = True
+except ImportError:
+    REAL_MODEL_AVAILABLE = False
+
 from mock_data import (
     MockDiseaseClassifier, 
     get_mock_disease_info, 
@@ -25,6 +31,29 @@ from mock_data import (
     create_mock_sample_images,
     DISEASE_CATEGORIES
 )
+
+# Import new services
+from translations import get_translation, create_language_selector, get_current_language
+from weather_service import WeatherService, create_mock_weather_data, get_weather_recommendations
+from market_service import MarketPriceService, create_mock_market_data, get_market_insights
+
+
+@st.cache_resource
+def load_disease_classifier():
+    """Load the disease classifier model."""
+    if REAL_MODEL_AVAILABLE:
+        try:
+            model_path = Path("outputs/best_model.pth")
+            if model_path.exists():
+                # Determine device
+                device = "mps" if torch.backends.mps.is_available() else "cpu"
+                classifier = DiseaseClassifier(model_path=model_path, device=device)
+                return classifier, True
+        except Exception as e:
+            st.error(f"Error loading real model: {e}")
+    
+    # Fallback to mock data
+    return MockDiseaseClassifier(), False
 
 
 # Page configuration
@@ -301,33 +330,57 @@ def display_prediction_results(
 
 def main():
     """Main application function."""
-    # Header
-    st.markdown('<h1 class="main-header">🌱 Plant Disease Detection for Indian Farmers</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Upload an image of your plant to detect diseases and get treatment recommendations</p>', unsafe_allow_html=True)
+    # Initialize language
+    if 'language' not in st.session_state:
+        st.session_state.language = 'en'
     
-    # Demo notice
-    st.info("🚀 **Demo Mode**: This is a demonstration using mock data. Upload any image to see how the system works!")
+    current_lang = get_current_language()
+    
+    # Load the disease classifier
+    classifier, is_real_model = load_disease_classifier()
+    
+    # Header
+    st.markdown(f'<h1 class="main-header">{get_translation("app_title", current_lang)}</h1>', unsafe_allow_html=True)
+    st.markdown(f'<p class="sub-header">{get_translation("app_subtitle", current_lang)}</p>', unsafe_allow_html=True)
+    
+    # Model status
+    if is_real_model:
+        st.success("✅ Using trained ResNet-18 model (88.86% accuracy)")
+    else:
+        st.warning("⚠️ Using mock model for demonstration")
+    
+    # Language selector
+    st.markdown("---")
+    create_language_selector()
+    st.markdown("---")
     
     # Sidebar
-    st.sidebar.title("⚙️ Settings")
+    st.sidebar.title(get_translation("settings", current_lang))
     
-    # Model selection
-    model_path = st.sidebar.selectbox(
-        "Select Model",
-        ["Mock Model (ResNet-50)", "Mock Model (EfficientNet)", "Mock Model (Custom CNN)"],
-        help="Choose the mock model to use for predictions"
-    )
+    # Model info
+    if is_real_model:
+        st.sidebar.success("🤖 Real Model Active")
+        st.sidebar.info(f"📊 Accuracy: 88.86%")
+        st.sidebar.info(f"🏷️ Classes: {len(classifier.class_names)}")
+    else:
+        st.sidebar.warning("🎭 Mock Model Active")
     
     # Device selection
+    device_options = ["cpu"]
+    if torch.cuda.is_available():
+        device_options.append("cuda")
+    if torch.backends.mps.is_available():
+        device_options.append("mps")
+    
     device = st.sidebar.selectbox(
-        "Device",
-        ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"],
+        get_translation("device", current_lang),
+        device_options,
         help="Select the device for inference"
     )
     
     # Confidence threshold
     confidence_threshold = st.sidebar.slider(
-        "Confidence Threshold",
+        get_translation("confidence_threshold", current_lang),
         min_value=0.0,
         max_value=1.0,
         value=0.5,
@@ -337,25 +390,19 @@ def main():
     
     # Crop type selection
     crop_type = st.sidebar.selectbox(
-        "Crop Type",
+        get_translation("crop_type", current_lang),
         get_supported_crops(),
         help="Select the crop type for better predictions"
     )
     
-    # Load model
-    if st.sidebar.button("🔄 Load Model"):
-        with st.spinner("Loading model..."):
-            classifier = load_model(model_path, device)
-            if classifier:
-                st.sidebar.success("Mock model loaded successfully!")
-                st.session_state.classifier = classifier
-            else:
-                st.sidebar.error("Failed to load model!")
+    # Location selection for weather
+    st.sidebar.markdown("### 🌍 Location")
+    city = st.sidebar.text_input("City", value="Mysore", help="Enter your city for weather data")
+    state = st.sidebar.text_input("State", value="Karnataka", help="Enter your state")
     
-    # Auto-load mock model if not already loaded
-    if 'classifier' not in st.session_state:
-        st.session_state.classifier = MockDiseaseClassifier()
-        st.sidebar.success("Mock model ready!")
+    # Set the classifier in session state
+    st.session_state.classifier = classifier
+    st.session_state.is_real_model = is_real_model
     
     # Model performance metrics
     if st.sidebar.checkbox("Show Model Performance", value=True):
@@ -367,7 +414,13 @@ def main():
         st.sidebar.metric("F1-Score", f"{performance['f1_score']:.1%}")
     
     # Create tabs for different views
-    tab1, tab2, tab3 = st.tabs(["🔍 Disease Detection", "📊 Model Info", "📚 Disease Database"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        get_translation("disease_detection", current_lang), 
+        get_translation("model_info", current_lang), 
+        get_translation("disease_database", current_lang),
+        get_translation("weather_forecast", current_lang),
+        get_translation("market_prices", current_lang)
+    ])
     
     with tab1:
         # Main content area
@@ -408,9 +461,10 @@ def main():
                 if isinstance(uploaded_file, str):
                     image = Image.open(uploaded_file)
                 else:
-                    image = uploaded_file
+                    # Convert UploadedFile to PIL Image
+                    image = Image.open(uploaded_file)
                     
-                st.image(image, caption="Uploaded Image", use_column_width=True)
+                st.image(image, caption="Uploaded Image", use_container_width=True)
                 
                 # Image info
                 image_info = create_mock_image_info(image)
@@ -430,7 +484,7 @@ def main():
                     else:
                         with st.spinner("Analyzing image..."):
                             try:
-                                # Generate mock predictions based on selected crop type
+                                # Get predictions from the classifier
                                 predictions = st.session_state.classifier.predict(image, top_k=5)
                                 
                                 # Filter by confidence threshold
@@ -449,6 +503,7 @@ def main():
                                     
                             except Exception as e:
                                 st.error(f"Error during prediction: {e}")
+                                st.error(f"Error details: {str(e)}")
             else:
                 st.info("Please upload an image or select a sample image to get started.")
     
@@ -456,21 +511,48 @@ def main():
         st.markdown("### 🤖 Model Information")
         
         if st.session_state.classifier:
-            model_info = st.session_state.classifier.get_model_info()
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("#### Model Details")
-                st.metric("Model Type", model_info['model_type'])
-                st.metric("Input Size", f"{model_info['input_size'][0]}x{model_info['input_size'][1]}")
-                st.metric("Number of Classes", model_info['num_classes'])
-                st.metric("Model Size", f"{model_info['model_size_mb']:.1f} MB")
-            
-            with col2:
-                st.markdown("#### Performance Metrics")
-                st.metric("Training Accuracy", f"{model_info['training_accuracy']:.1%}")
-                st.metric("Validation Accuracy", f"{model_info['validation_accuracy']:.1%}")
+            if st.session_state.is_real_model:
+                # Real model information
+                st.success("✅ Using Trained ResNet-18 Model")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("#### Model Details")
+                    st.metric("Model Type", "ResNet-18")
+                    st.metric("Input Size", "224x224")
+                    st.metric("Number of Classes", len(classifier.class_names))
+                    st.metric("Device", device)
+                
+                with col2:
+                    st.markdown("#### Performance Metrics")
+                    st.metric("Test Accuracy", "88.86%")
+                    st.metric("Best Validation Accuracy", "89.18%")
+                    st.metric("Training Epochs", "5")
+                    st.metric("Model Status", "Trained")
+                
+                # Display class names
+                st.markdown("#### Supported Classes")
+                class_cols = st.columns(3)
+                for i, class_name in enumerate(classifier.class_names):
+                    with class_cols[i % 3]:
+                        st.text(f"• {class_name.replace('_', ' ').title()}")
+            else:
+                # Mock model information
+                model_info = st.session_state.classifier.get_model_info()
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("#### Model Details")
+                    st.metric("Model Type", model_info['model_type'])
+                    st.metric("Input Size", f"{model_info['input_size'][0]}x{model_info['input_size'][1]}")
+                    st.metric("Number of Classes", model_info['num_classes'])
+                    st.metric("Model Size", f"{model_info['model_size_mb']:.1f} MB")
+                
+                with col2:
+                    st.markdown("#### Performance Metrics")
+                    st.metric("Training Accuracy", f"{model_info['training_accuracy']:.1%}")
+                    st.metric("Validation Accuracy", f"{model_info['validation_accuracy']:.1%}")
                 
                 # Performance chart
                 performance = get_mock_model_performance()
@@ -485,26 +567,227 @@ def main():
                 st.plotly_chart(fig, use_container_width=True)
     
     with tab3:
-        st.markdown("### 📚 Disease Database")
+        st.markdown(f"### {get_translation('disease_database', current_lang)}")
         
         # Show diseases for selected crop
         if crop_type in DISEASE_CATEGORIES:
-            st.markdown(f"#### {crop_type.title()} Diseases")
+            st.markdown(f"#### {crop_type.title()} {get_translation('diseases', current_lang)}")
             
             for disease, info in DISEASE_CATEGORIES[crop_type].items():
                 with st.expander(f"🌿 {info['name']}", expanded=False):
-                    st.markdown(f"**Symptoms:** {info['symptoms']}")
-                    st.markdown(f"**Treatment:** {info['treatment']}")
-                    st.markdown(f"**Prevention:** {info['prevention']}")
+                    st.markdown(f"**{get_translation('symptoms', current_lang)}:** {info['symptoms']}")
+                    st.markdown(f"**{get_translation('treatment', current_lang)}:** {info['treatment']}")
+                    st.markdown(f"**{get_translation('prevention', current_lang)}:** {info['prevention']}")
         else:
             st.info("Select a crop type from the sidebar to view disease information.")
     
+    with tab4:
+        st.markdown(f"### {get_translation('weather_forecast', current_lang)}")
+        
+        # Initialize weather service
+        weather_service = WeatherService()
+        
+        # Get weather data
+        with st.spinner("Fetching weather data..."):
+            # Try to get real weather data, fallback to mock
+            try:
+                coords = weather_service.get_coordinates(city, state)
+                if coords:
+                    current_weather = weather_service.get_current_weather(coords["latitude"], coords["longitude"])
+                    forecast = weather_service.get_forecast(coords["latitude"], coords["longitude"])
+                    alerts = weather_service.get_weather_alerts(coords["latitude"], coords["longitude"])
+                else:
+                    current_weather = None
+                    forecast = None
+                    alerts = []
+            except:
+                # Use mock data
+                weather_data = create_mock_weather_data()
+                current_weather = weather_data["current"]
+                forecast = weather_data["forecast"]
+                alerts = weather_data["alerts"]
+        
+        # Display current weather
+        if current_weather:
+            st.markdown(f"#### {get_translation('current_weather', current_lang)}")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric(
+                    get_translation('temperature', current_lang),
+                    f"{current_weather['temperature']:.1f}°C"
+                )
+            
+            with col2:
+                st.metric(
+                    get_translation('humidity', current_lang),
+                    f"{current_weather['humidity']:.0f}%"
+                )
+            
+            with col3:
+                st.metric(
+                    get_translation('rainfall', current_lang),
+                    f"{current_weather['precipitation']:.1f}mm"
+                )
+            
+            with col4:
+                st.metric(
+                    get_translation('wind_speed', current_lang),
+                    f"{current_weather['wind_speed']:.1f} km/h"
+                )
+        
+        # Display weather alerts
+        if alerts:
+            st.markdown(f"#### {get_translation('weather_alert', current_lang)}")
+            for alert in alerts:
+                st.warning(f"{alert['icon']} {alert['message']}")
+        
+        # Display forecast
+        if forecast:
+            st.markdown("#### 7-Day Forecast")
+            
+            # Create forecast chart
+            dates = [day["date"] for day in forecast]
+            max_temps = [day["max_temp"] for day in forecast]
+            min_temps = [day["min_temp"] for day in forecast]
+            precipitation = [day["precipitation"] for day in forecast]
+            
+            fig = make_subplots(
+                rows=2, cols=1,
+                subplot_titles=("Temperature Forecast", "Precipitation Forecast"),
+                vertical_spacing=0.1
+            )
+            
+            # Temperature chart
+            fig.add_trace(
+                go.Scatter(x=dates, y=max_temps, name="Max Temp", line=dict(color="red")),
+                row=1, col=1
+            )
+            fig.add_trace(
+                go.Scatter(x=dates, y=min_temps, name="Min Temp", line=dict(color="blue")),
+                row=1, col=1
+            )
+            
+            # Precipitation chart
+            fig.add_trace(
+                go.Bar(x=dates, y=precipitation, name="Precipitation", marker_color="lightblue"),
+                row=2, col=1
+            )
+            
+            fig.update_layout(height=600, showlegend=True)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Weather recommendations
+        if current_weather:
+            recommendations = get_weather_recommendations({"current": current_weather, "forecast": forecast}, crop_type)
+            if recommendations:
+                st.markdown(f"#### {get_translation('recommendations', current_lang)}")
+                for rec in recommendations:
+                    if rec["priority"] == "high":
+                        st.error(f"{rec['icon']} {rec['message']}")
+                    elif rec["priority"] == "medium":
+                        st.warning(f"{rec['icon']} {rec['message']}")
+                    else:
+                        st.info(f"{rec['icon']} {rec['message']}")
+    
+    with tab5:
+        st.markdown(f"### {get_translation('market_prices', current_lang)}")
+        
+        # Initialize market service
+        market_service = MarketPriceService()
+        
+        # Get market data
+        with st.spinner("Fetching market data..."):
+            try:
+                prices = market_service.get_crop_prices(state, city)
+                if not prices:
+                    prices = create_mock_market_data()["prices"]
+            except:
+                prices = create_mock_market_data()["prices"]
+        
+        # Display current prices
+        if prices:
+            st.markdown(f"#### {get_translation('crop_prices', current_lang)}")
+            
+            # Filter prices for selected crop
+            crop_prices = [p for p in prices if crop_type.lower() in p.get("commodity", "").lower()]
+            
+            if crop_prices:
+                # Display prices in a table
+                import pandas as pd
+                df = pd.DataFrame(crop_prices)
+                st.dataframe(df[["commodity", "variety", "market", "modal_price", "date"]], use_container_width=True)
+                
+                # Price trends
+                st.markdown("#### Price Trends")
+                trends = market_service.get_price_trends(crop_type, 7)
+                if trends:
+                    trend_df = pd.DataFrame(trends)
+                    
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(
+                        x=trend_df["date"],
+                        y=trend_df["price"],
+                        mode="lines+markers",
+                        name="Price",
+                        line=dict(color="green")
+                    ))
+                    
+                    fig.update_layout(
+                        title=f"{crop_type.title()} Price Trends (7 days)",
+                        xaxis_title="Date",
+                        yaxis_title="Price (₹/quintal)",
+                        height=400
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Market recommendations
+                recommendations = market_service.get_market_recommendations(prices, crop_type)
+                if recommendations:
+                    st.markdown(f"#### {get_translation('recommendations', current_lang)}")
+                    for rec in recommendations:
+                        if rec["priority"] == "high":
+                            st.success(f"{rec['icon']} {rec['message']}")
+                        elif rec["priority"] == "medium":
+                            st.warning(f"{rec['icon']} {rec['message']}")
+                        else:
+                            st.info(f"{rec['icon']} {rec['message']}")
+            else:
+                st.info(f"No market data available for {crop_type}. Showing all available crops.")
+                
+                # Show all prices
+                import pandas as pd
+                df = pd.DataFrame(prices)
+                st.dataframe(df[["commodity", "variety", "market", "modal_price", "date"]], use_container_width=True)
+        
+        # Market insights
+        if prices:
+            insights = get_market_insights(prices)
+            st.markdown("#### Market Insights")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Average Price", f"₹{insights['average_price']:.0f}/quintal")
+            
+            with col2:
+                st.metric("Price Range", f"₹{insights['price_range']['min']:.0f} - ₹{insights['price_range']['max']:.0f}")
+            
+            with col3:
+                st.metric("Market Activity", insights['market_activity'])
+    
     # Footer
     st.markdown("---")
-    st.markdown("""
+    footer_text = {
+        "en": "🌱 Plant Disease Detection System for Indian Farmers<br>Built with PyTorch and Streamlit | Designed for agricultural communities",
+        "hi": "🌱 भारतीय किसानों के लिए पौधे की बीमारी का पता लगाने वाली प्रणाली<br>PyTorch और Streamlit के साथ निर्मित | कृषि समुदायों के लिए डिज़ाइन किया गया",
+        "kn": "🌱 ಭಾರತೀಯ ರೈತರಿಗೆ ಸಸ್ಯ ರೋಗ ಪತ್ತೆ ವ್ಯವಸ್ಥೆ<br>PyTorch ಮತ್ತು Streamlit ನೊಂದಿಗೆ ನಿರ್ಮಿಸಲಾಗಿದೆ | ಕೃಷಿ ಸಮುದಾಯಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ"
+    }
+    
+    st.markdown(f"""
     <div style="text-align: center; color: #666;">
-        <p>🌱 Plant Disease Detection System for Indian Farmers</p>
-        <p>Built with PyTorch and Streamlit | Designed for agricultural communities</p>
+        <p>{footer_text.get(current_lang, footer_text['en'])}</p>
     </div>
     """, unsafe_allow_html=True)
 

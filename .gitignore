@@ -130,7 +130,12 @@ dmypy.json
 
 # Project specific
 data/plant_diseases/
-outputs/
+# outputs/  # Commented out to allow trained models
+# Allow trained model files
+!outputs/*.pth
+!outputs/*.json
+!outputs/*.png
+# Exclude other model files outside outputs
 *.pth
 *.pt
 *.pkl
@@ -153,3 +158,6 @@ logs/
 # Temporary files
 temp/
 tmp/
+
+kaggle.json
+data/*

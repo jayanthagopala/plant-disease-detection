@@ -14,9 +14,9 @@ from tqdm import tqdm
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix
 
-from models.cnn_model import create_model, save_model
-from data.dataset import create_data_loaders
-from data.utils import create_sample_dataset, analyze_dataset
+from src.models.cnn_model import create_model, save_model
+from src.data.dataset import create_data_loaders
+from src.data.utils import create_sample_dataset, analyze_dataset
 
 
 class EarlyStopping:
@@ -226,13 +226,25 @@ def main():
     
     args = parser.parse_args()
     
-    # Set device
+    # Set device - prioritize MPS for Apple Silicon
     if args.device == 'auto':
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if torch.backends.mps.is_available():
+            device = 'mps'
+        elif torch.cuda.is_available():
+            device = 'cuda'
+        else:
+            device = 'cpu'
     else:
         device = args.device
     
     print(f"Using device: {device}")
+    
+    # MPS memory management for Apple Silicon
+    if device == 'mps':
+        print("🍎 Optimizing for Apple Silicon M4...")
+        # Clear MPS cache before training
+        if hasattr(torch.mps, 'empty_cache'):
+            torch.mps.empty_cache()
     
     # Create output directory
     output_dir = Path(args.output_dir)
@@ -260,13 +272,15 @@ def main():
     
     print(f"Found {num_classes} classes: {class_names}")
     
-    # Create data loaders
+    # Create data loaders - optimize for Apple Silicon
     print("Creating data loaders...")
+    # Use fewer workers on Apple Silicon to avoid overhead
+    num_workers = 2 if device == 'mps' else 4
     train_loader, val_loader, test_loader, _ = create_data_loaders(
         data_dir=data_dir,
         class_names=class_names,
         batch_size=args.batch_size,
-        num_workers=4
+        num_workers=num_workers
     )
     
     print(f"Training samples: {len(train_loader.dataset)}")
@@ -336,6 +350,10 @@ def main():
                 num_classes=num_classes
             )
             print(f"New best model saved with validation accuracy: {val_acc:.2f}%")
+        
+        # Memory cleanup for MPS
+        if device == 'mps' and hasattr(torch.mps, 'empty_cache'):
+            torch.mps.empty_cache()
         
         # Early stopping
         if early_stopping(val_loss):

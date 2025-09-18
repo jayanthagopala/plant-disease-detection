@@ -22,6 +22,7 @@ dependencies = [
     "requests>=2.31.0",
     "plotly>=5.0.0",
     "pathlib2>=2.3.7; python_version < '3.4'",
+    "kaggle>=1.7.4.5",
 ]
 
 [project.optional-dependencies]

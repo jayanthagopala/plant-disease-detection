@@ -52,6 +52,8 @@ class PlantDiseaseDataset(Dataset):
                 
             for img_path in class_dir.glob("*.jpg"):
                 samples.append((img_path, self.class_to_idx[class_name]))
+            for img_path in class_dir.glob("*.JPG"):
+                samples.append((img_path, self.class_to_idx[class_name]))
             for img_path in class_dir.glob("*.png"):
                 samples.append((img_path, self.class_to_idx[class_name]))
             for img_path in class_dir.glob("*.jpeg"):
@@ -170,7 +172,7 @@ def create_data_loaders(
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=False  # Disable for MPS compatibility
     )
     
     val_loader = DataLoader(
@@ -178,7 +180,7 @@ def create_data_loaders(
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=False  # Disable for MPS compatibility
     )
     
     test_loader = DataLoader(
@@ -186,7 +188,7 @@ def create_data_loaders(
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=False  # Disable for MPS compatibility
     )
     
     return train_loader, val_loader, test_loader, class_names

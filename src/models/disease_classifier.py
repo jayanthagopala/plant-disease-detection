@@ -185,130 +185,102 @@ class DiseaseClassifier:
         Returns:
             Dictionary with disease information
         """
-        # This would typically come from a database or config file
+        # Disease information for our trained classes
         disease_info = {
-            # Rice diseases
-            "rice_blast": {
-                "name": "Rice Blast",
-                "symptoms": "Small, diamond-shaped lesions on leaves, stems, and panicles",
-                "treatment": "Use resistant varieties, proper water management, fungicide application",
-                "prevention": "Avoid excessive nitrogen, maintain proper spacing, crop rotation"
+            # Pepper diseases
+            "pepper_bacterial_spot": {
+                "name": "Pepper Bacterial Spot",
+                "symptoms": "Small, dark, water-soaked spots on leaves and fruits that become necrotic",
+                "treatment": "Copper-based fungicides, resistant varieties, proper sanitation",
+                "prevention": "Crop rotation, avoid overhead irrigation, proper spacing, field sanitation"
             },
-            "rice_healthy": {
-                "name": "Healthy Rice",
-                "symptoms": "No visible disease symptoms",
+            "pepper_healthy": {
+                "name": "Healthy Pepper",
+                "symptoms": "No visible disease symptoms, vibrant green leaves",
                 "treatment": "Continue current care practices",
-                "prevention": "Maintain good agricultural practices"
-            },
-            
-            # Wheat diseases
-            "wheat_rust": {
-                "name": "Wheat Rust",
-                "symptoms": "Orange or yellow pustules on leaves and stems",
-                "treatment": "Fungicide application, resistant varieties",
-                "prevention": "Crop rotation, proper field sanitation, early planting"
-            },
-            "wheat_healthy": {
-                "name": "Healthy Wheat",
-                "symptoms": "No visible disease symptoms",
-                "treatment": "Continue current care practices",
-                "prevention": "Maintain good agricultural practices"
-            },
-            
-            # Corn/Maize diseases
-            "corn_common_rust": {
-                "name": "Corn Common Rust",
-                "symptoms": "Small, round to elongated pustules on leaves",
-                "treatment": "Fungicide application, resistant varieties",
-                "prevention": "Crop rotation, proper spacing, field sanitation"
-            },
-            "corn_healthy": {
-                "name": "Healthy Corn",
-                "symptoms": "No visible disease symptoms",
-                "treatment": "Continue current care practices",
-                "prevention": "Maintain good agricultural practices"
+                "prevention": "Maintain good agricultural practices, proper nutrition"
             },
             
             # Potato diseases
             "potato_early_blight": {
                 "name": "Potato Early Blight",
-                "symptoms": "Dark brown spots with concentric rings on leaves",
-                "treatment": "Fungicide application, proper irrigation",
-                "prevention": "Crop rotation, remove infected debris, proper spacing"
+                "symptoms": "Dark brown spots with concentric rings on leaves, starting from lower leaves",
+                "treatment": "Fungicide application, proper irrigation management",
+                "prevention": "Crop rotation, remove infected debris, proper spacing, avoid overhead irrigation"
             },
             "potato_late_blight": {
                 "name": "Potato Late Blight",
-                "symptoms": "Water-soaked lesions that turn brown and necrotic",
-                "treatment": "Fungicide application, resistant varieties",
-                "prevention": "Proper drainage, crop rotation, avoid overhead irrigation"
+                "symptoms": "Water-soaked lesions that turn brown and necrotic, white mold in humid conditions",
+                "treatment": "Fungicide application, resistant varieties, proper drainage",
+                "prevention": "Proper drainage, crop rotation, avoid overhead irrigation, field sanitation"
             },
             "potato_healthy": {
                 "name": "Healthy Potato",
-                "symptoms": "No visible disease symptoms",
+                "symptoms": "No visible disease symptoms, healthy green foliage",
                 "treatment": "Continue current care practices",
-                "prevention": "Maintain good agricultural practices"
+                "prevention": "Maintain good agricultural practices, proper nutrition"
             },
             
             # Tomato diseases
             "tomato_bacterial_spot": {
                 "name": "Tomato Bacterial Spot",
-                "symptoms": "Small, dark, water-soaked spots on leaves and fruits",
-                "treatment": "Copper-based fungicides, resistant varieties",
-                "prevention": "Crop rotation, proper spacing, avoid overhead irrigation"
+                "symptoms": "Small, dark, water-soaked spots on leaves, stems, and fruits",
+                "treatment": "Copper-based fungicides, resistant varieties, proper sanitation",
+                "prevention": "Crop rotation, proper spacing, avoid overhead irrigation, field sanitation"
             },
             "tomato_early_blight": {
                 "name": "Tomato Early Blight",
-                "symptoms": "Dark brown spots with concentric rings on lower leaves",
-                "treatment": "Fungicide application, proper pruning",
-                "prevention": "Crop rotation, remove infected debris, proper spacing"
+                "symptoms": "Dark brown spots with concentric rings on lower leaves, yellowing",
+                "treatment": "Fungicide application, proper pruning, good air circulation",
+                "prevention": "Crop rotation, remove infected debris, proper spacing, avoid overhead irrigation"
             },
             "tomato_late_blight": {
                 "name": "Tomato Late Blight",
-                "symptoms": "Water-soaked lesions that rapidly expand",
-                "treatment": "Fungicide application, resistant varieties",
-                "prevention": "Proper drainage, avoid overhead irrigation, crop rotation"
+                "symptoms": "Water-soaked lesions that rapidly expand, white mold in humid conditions",
+                "treatment": "Fungicide application, resistant varieties, proper drainage",
+                "prevention": "Proper drainage, avoid overhead irrigation, crop rotation, field sanitation"
+            },
+            "tomato_leaf_mold": {
+                "name": "Tomato Leaf Mold",
+                "symptoms": "Yellow spots on upper leaf surface, fuzzy mold on lower surface",
+                "treatment": "Fungicide application, improve air circulation, reduce humidity",
+                "prevention": "Proper spacing, good air circulation, avoid overhead irrigation, resistant varieties"
+            },
+            "tomato_mosaic_virus": {
+                "name": "Tomato Mosaic Virus",
+                "symptoms": "Mottled yellow and green patterns on leaves, stunted growth",
+                "treatment": "Remove infected plants, control aphids, use virus-free seeds",
+                "prevention": "Use certified virus-free seeds, control aphids, proper sanitation, resistant varieties"
+            },
+            "tomato_septoria_spot": {
+                "name": "Tomato Septoria Leaf Spot",
+                "symptoms": "Small, circular spots with dark borders and light centers on leaves",
+                "treatment": "Fungicide application, remove infected leaves, improve air circulation",
+                "prevention": "Crop rotation, proper spacing, avoid overhead irrigation, field sanitation"
+            },
+            "tomato_spider_mites": {
+                "name": "Tomato Spider Mites",
+                "symptoms": "Fine webbing, yellow stippling on leaves, leaf drop",
+                "treatment": "Insecticidal soap, neem oil, predatory mites, proper irrigation",
+                "prevention": "Regular monitoring, proper irrigation, avoid dusty conditions, beneficial insects"
+            },
+            "tomato_target_spot": {
+                "name": "Tomato Target Spot",
+                "symptoms": "Circular spots with concentric rings, yellow halos around lesions",
+                "treatment": "Fungicide application, improve air circulation, proper pruning",
+                "prevention": "Crop rotation, proper spacing, avoid overhead irrigation, field sanitation"
+            },
+            "tomato_yellow_curl": {
+                "name": "Tomato Yellow Leaf Curl",
+                "symptoms": "Yellowing and curling of leaves, stunted growth, reduced fruit production",
+                "treatment": "Remove infected plants, control whiteflies, use resistant varieties",
+                "prevention": "Use resistant varieties, control whiteflies, proper sanitation, crop rotation"
             },
             "tomato_healthy": {
                 "name": "Healthy Tomato",
-                "symptoms": "No visible disease symptoms",
+                "symptoms": "No visible disease symptoms, vibrant green foliage, normal growth",
                 "treatment": "Continue current care practices",
-                "prevention": "Maintain good agricultural practices"
-            },
-            
-            # Apple diseases
-            "apple_scab": {
-                "name": "Apple Scab",
-                "symptoms": "Dark, scaly lesions on leaves and fruits",
-                "treatment": "Fungicide application, resistant varieties",
-                "prevention": "Proper pruning, remove fallen leaves, good air circulation"
-            },
-            "apple_healthy": {
-                "name": "Healthy Apple",
-                "symptoms": "No visible disease symptoms",
-                "treatment": "Continue current care practices",
-                "prevention": "Maintain good agricultural practices"
-            },
-            
-            # Grape diseases
-            "grape_black_rot": {
-                "name": "Grape Black Rot",
-                "symptoms": "Circular, reddish-brown spots on leaves and fruits",
-                "treatment": "Fungicide application, proper pruning",
-                "prevention": "Good air circulation, remove infected material, proper spacing"
-            },
-            "grape_healthy": {
-                "name": "Healthy Grape",
-                "symptoms": "No visible disease symptoms",
-                "treatment": "Continue current care practices",
-                "prevention": "Maintain good agricultural practices"
-            },
-            
-            # General healthy plant
-            "healthy": {
-                "name": "Healthy Plant",
-                "symptoms": "No visible disease symptoms",
-                "treatment": "Continue current care practices",
-                "prevention": "Maintain good agricultural practices"
+                "prevention": "Maintain good agricultural practices, proper nutrition, regular monitoring"
             }
         }
         

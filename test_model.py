@@ -53,7 +53,7 @@ def test_model():
             continue
             
         # Get first image from this class
-        image_files = list(class_dir.glob("*.jpg"))
+        image_files = list(class_dir.glob("*.jpg")) + list(class_dir.glob("*.JPG"))
         if not image_files:
             continue
             
