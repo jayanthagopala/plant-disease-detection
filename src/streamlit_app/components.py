@@ -404,6 +404,413 @@ def create_quick_actions() -> None:
             st.session_state.clear_analysis = True
 
 
+def create_weather_forecast_chart(forecast_data: List[Dict], current_weather: Dict = None, language: str = "en") -> go.Figure:
+    """Create an enhanced weather forecast chart."""
+    if not forecast_data:
+        return None
+    
+    # Import translations
+    from translations import get_translation
+    
+    # Prepare data
+    dates = [day["date"] for day in forecast_data]
+    max_temps = [day["max_temp"] for day in forecast_data]
+    min_temps = [day["min_temp"] for day in forecast_data]
+    precipitation = [day["precipitation"] for day in forecast_data]
+    precipitation_prob = [day.get("precipitation_prob", 0) for day in forecast_data]
+    weather_codes = [day.get("weather_code", 0) for day in forecast_data]
+    
+    # Create subplots
+    fig = make_subplots(
+        rows=3, cols=1,
+        subplot_titles=(
+            get_translation("temperature_forecast", language), 
+            get_translation("precipitation_forecast", language), 
+            get_translation("weather_conditions", language)
+        ),
+        vertical_spacing=0.08,
+        specs=[[{"secondary_y": False}], [{"secondary_y": False}], [{"secondary_y": False}]]
+    )
+    
+    # Temperature chart
+    fig.add_trace(
+        go.Scatter(
+            x=dates, 
+            y=max_temps, 
+            name="Max Temperature", 
+            line=dict(color="red", width=3),
+            marker=dict(size=8, color="red")
+        ),
+        row=1, col=1
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=dates, 
+            y=min_temps, 
+            name="Min Temperature", 
+            line=dict(color="blue", width=3),
+            marker=dict(size=8, color="blue"),
+            fill="tonexty"
+        ),
+        row=1, col=1
+    )
+    
+    # Precipitation chart
+    fig.add_trace(
+        go.Bar(
+            x=dates, 
+            y=precipitation, 
+            name="Precipitation (mm)",
+            marker_color="lightblue",
+            opacity=0.7
+        ),
+        row=2, col=1
+    )
+    
+    # Precipitation probability
+    fig.add_trace(
+        go.Scatter(
+            x=dates,
+            y=precipitation_prob,
+            name="Rain Probability (%)",
+            line=dict(color="darkblue", width=2, dash="dash"),
+            marker=dict(size=6, color="darkblue")
+        ),
+        row=2, col=1
+    )
+    
+    # Weather conditions (using weather codes as bar chart)
+    weather_descriptions = [day.get("description", "Unknown") for day in forecast_data]
+    fig.add_trace(
+        go.Bar(
+            x=dates,
+            y=weather_codes,
+            name="Weather Code",
+            marker_color="lightgreen",
+            opacity=0.6,
+            text=weather_descriptions,
+            textposition="auto"
+        ),
+        row=3, col=1
+    )
+    
+    # Update layout
+    fig.update_layout(
+        height=800,
+        showlegend=True,
+        title="7-Day Weather Forecast",
+        title_x=0.5
+    )
+    
+    # Update axes
+    fig.update_xaxes(title_text="Date", row=1, col=1)
+    fig.update_yaxes(title_text="Temperature (°C)", row=1, col=1)
+    fig.update_xaxes(title_text="Date", row=2, col=1)
+    fig.update_yaxes(title_text="Precipitation (mm)", row=2, col=1)
+    fig.update_xaxes(title_text="Date", row=3, col=1)
+    fig.update_yaxes(title_text="Weather Code", row=3, col=1)
+    
+    return fig
+
+
+def create_weather_alerts_display(alerts: List[Dict]) -> None:
+    """Create an enhanced weather alerts display."""
+    if not alerts:
+        st.info("🌤️ No weather alerts at this time. Conditions are normal.")
+        return
+    
+    st.markdown("#### 🚨 Weather Alerts")
+    
+    # Group alerts by priority
+    high_priority = [alert for alert in alerts if alert.get("priority") == "high"]
+    medium_priority = [alert for alert in alerts if alert.get("priority") == "medium"]
+    low_priority = [alert for alert in alerts if alert.get("priority") == "low"]
+    
+    # Display high priority alerts
+    if high_priority:
+        for alert in high_priority:
+            st.markdown(f"""
+            <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 1rem; margin: 0.5rem 0;">
+                <h4 style="color: #721c24; margin: 0 0 0.5rem 0;">{alert.get('icon', '⚠️')} {alert.get('type', 'Alert').title()}</h4>
+                <p style="color: #721c24; margin: 0;">{alert.get('message', 'No message available')}</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Display medium priority alerts
+    if medium_priority:
+        for alert in medium_priority:
+            st.markdown(f"""
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin: 0.5rem 0;">
+                <h4 style="color: #856404; margin: 0 0 0.5rem 0;">{alert.get('icon', '⚠️')} {alert.get('type', 'Alert').title()}</h4>
+                <p style="color: #856404; margin: 0;">{alert.get('message', 'No message available')}</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Display low priority alerts
+    if low_priority:
+        for alert in low_priority:
+            st.markdown(f"""
+            <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 1rem; margin: 0.5rem 0;">
+                <h4 style="color: #0c5460; margin: 0 0 0.5rem 0;">{alert.get('icon', 'ℹ️')} {alert.get('type', 'Info').title()}</h4>
+                <p style="color: #0c5460; margin: 0;">{alert.get('message', 'No message available')}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+
+def create_weather_recommendations_display(recommendations: List[Dict]) -> None:
+    """Create an enhanced weather recommendations display."""
+    if not recommendations:
+        st.info("🌱 No specific weather recommendations at this time.")
+        return
+    
+    st.markdown("#### 🌾 Weather-Based Recommendations")
+    
+    # Group recommendations by type
+    irrigation_recs = [rec for rec in recommendations if rec.get("type") == "irrigation"]
+    protection_recs = [rec for rec in recommendations if rec.get("type") == "protection"]
+    disease_recs = [rec for rec in recommendations if rec.get("type") == "disease_prevention"]
+    drainage_recs = [rec for rec in recommendations if rec.get("type") == "drainage"]
+    crop_specific_recs = [rec for rec in recommendations if rec.get("type") == "crop_specific"]
+    other_recs = [rec for rec in recommendations if rec.get("type") not in ["irrigation", "protection", "disease_prevention", "drainage", "crop_specific"]]
+    
+    # Display irrigation recommendations
+    if irrigation_recs:
+        with st.expander("💧 Irrigation Recommendations", expanded=True):
+            for rec in irrigation_recs:
+                priority_color = "red" if rec.get("priority") == "critical" else "orange" if rec.get("priority") == "high" else "blue"
+                st.markdown(f"""
+                <div style="background-color: #e3f2fd; border-left: 4px solid {priority_color}; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: {priority_color};">{rec.get('icon', '💧')} {rec.get('message', 'No message')}</h4>
+                    <p style="margin: 0; font-weight: bold;">Action: {rec.get('action', 'No action specified')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Display protection recommendations
+    if protection_recs:
+        with st.expander("🛡️ Crop Protection Recommendations", expanded=True):
+            for rec in protection_recs:
+                priority_color = "red" if rec.get("priority") == "critical" else "orange" if rec.get("priority") == "high" else "blue"
+                st.markdown(f"""
+                <div style="background-color: #fff3e0; border-left: 4px solid {priority_color}; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: {priority_color};">{rec.get('icon', '🛡️')} {rec.get('message', 'No message')}</h4>
+                    <p style="margin: 0; font-weight: bold;">Action: {rec.get('action', 'No action specified')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Display disease prevention recommendations
+    if disease_recs:
+        with st.expander("🦠 Disease Prevention Recommendations", expanded=True):
+            for rec in disease_recs:
+                priority_color = "red" if rec.get("priority") == "critical" else "orange" if rec.get("priority") == "high" else "blue"
+                st.markdown(f"""
+                <div style="background-color: #fce4ec; border-left: 4px solid {priority_color}; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: {priority_color};">{rec.get('icon', '🦠')} {rec.get('message', 'No message')}</h4>
+                    <p style="margin: 0; font-weight: bold;">Action: {rec.get('action', 'No action specified')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Display drainage recommendations
+    if drainage_recs:
+        with st.expander("🌊 Drainage Recommendations", expanded=True):
+            for rec in drainage_recs:
+                priority_color = "red" if rec.get("priority") == "critical" else "orange" if rec.get("priority") == "high" else "blue"
+                st.markdown(f"""
+                <div style="background-color: #e0f2f1; border-left: 4px solid {priority_color}; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: {priority_color};">{rec.get('icon', '🌊')} {rec.get('message', 'No message')}</h4>
+                    <p style="margin: 0; font-weight: bold;">Action: {rec.get('action', 'No action specified')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Display crop-specific recommendations
+    if crop_specific_recs:
+        with st.expander("🌾 Crop-Specific Recommendations", expanded=True):
+            for rec in crop_specific_recs:
+                priority_color = "red" if rec.get("priority") == "critical" else "orange" if rec.get("priority") == "high" else "blue"
+                st.markdown(f"""
+                <div style="background-color: #f1f8e9; border-left: 4px solid {priority_color}; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: {priority_color};">{rec.get('icon', '🌾')} {rec.get('message', 'No message')}</h4>
+                    <p style="margin: 0; font-weight: bold;">Action: {rec.get('action', 'No action specified')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Display other recommendations
+    if other_recs:
+        with st.expander("📋 Other Recommendations", expanded=False):
+            for rec in other_recs:
+                priority_color = "red" if rec.get("priority") == "critical" else "orange" if rec.get("priority") == "high" else "blue"
+                st.markdown(f"""
+                <div style="background-color: #f5f5f5; border-left: 4px solid {priority_color}; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: {priority_color};">{rec.get('icon', '📋')} {rec.get('message', 'No message')}</h4>
+                    <p style="margin: 0; font-weight: bold;">Action: {rec.get('action', 'No action specified')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+
+def create_current_weather_display(current_weather: Dict) -> None:
+    """Create an enhanced current weather display."""
+    if not current_weather:
+        st.warning("Unable to fetch current weather data.")
+        return
+    
+    st.markdown("#### 🌤️ Current Weather Conditions")
+    
+    # Main weather metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        temp = current_weather.get("temperature", 0)
+        temp_color = "red" if temp > 35 else "blue" if temp < 15 else "green"
+        st.markdown(f"""
+        <div style="text-align: center; padding: 1rem; background-color: #f8f9fa; border-radius: 10px; border: 2px solid {temp_color};">
+            <h2 style="margin: 0; color: {temp_color};">{temp:.1f}°C</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Temperature</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        humidity = current_weather.get("humidity", 0)
+        humidity_color = "red" if humidity > 80 else "orange" if humidity > 60 else "green"
+        st.markdown(f"""
+        <div style="text-align: center; padding: 1rem; background-color: #f8f9fa; border-radius: 10px; border: 2px solid {humidity_color};">
+            <h2 style="margin: 0; color: {humidity_color};">{humidity:.0f}%</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Humidity</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        precipitation = current_weather.get("precipitation", 0)
+        precip_color = "red" if precipitation > 10 else "orange" if precipitation > 5 else "green"
+        st.markdown(f"""
+        <div style="text-align: center; padding: 1rem; background-color: #f8f9fa; border-radius: 10px; border: 2px solid {precip_color};">
+            <h2 style="margin: 0; color: {precip_color};">{precipitation:.1f}mm</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Rainfall</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        wind_speed = current_weather.get("wind_speed", 0)
+        wind_color = "red" if wind_speed > 25 else "orange" if wind_speed > 15 else "green"
+        st.markdown(f"""
+        <div style="text-align: center; padding: 1rem; background-color: #f8f9fa; border-radius: 10px; border: 2px solid {wind_color};">
+            <h2 style="margin: 0; color: {wind_color};">{wind_speed:.1f} km/h</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Wind Speed</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Additional weather details
+    st.markdown("#### 📊 Additional Weather Details")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Weather Description", current_weather.get("description", "Unknown"))
+        st.metric("Cloud Cover", f"{current_weather.get('cloud_cover', 0):.0f}%")
+    
+    with col2:
+        st.metric("Wind Direction", f"{current_weather.get('wind_direction', 0):.0f}°")
+        st.metric("Atmospheric Pressure", f"{current_weather.get('pressure', 0):.1f} hPa")
+    
+    with col3:
+        st.metric("Last Updated", current_weather.get("timestamp", "Unknown")[:16])
+
+
+def create_weather_summary_card(weather_data: Dict) -> None:
+    """Create a weather summary card for quick overview."""
+    if not weather_data:
+        return
+    
+    current = weather_data.get("current", {})
+    forecast = weather_data.get("forecast", [])
+    alerts = weather_data.get("alerts", [])
+    
+    # Calculate summary metrics
+    temp = current.get("temperature", 0)
+    humidity = current.get("humidity", 0)
+    precipitation = current.get("precipitation", 0)
+    
+    # Weather condition assessment
+    if temp > 35:
+        condition = "Hot"
+        condition_icon = "🔥"
+        condition_color = "red"
+    elif temp < 15:
+        condition = "Cold"
+        condition_icon = "❄️"
+        condition_color = "blue"
+    else:
+        condition = "Moderate"
+        condition_icon = "🌤️"
+        condition_color = "green"
+    
+    # Alert count
+    alert_count = len(alerts)
+    alert_text = f"{alert_count} alert{'s' if alert_count != 1 else ''}"
+    
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 15px; margin: 1rem 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin: 0 0 0.5rem 0;">{condition_icon} {condition} Weather</h3>
+                <p style="margin: 0; font-size: 1.1rem;">{temp:.1f}°C • {humidity:.0f}% humidity • {precipitation:.1f}mm rain</p>
+            </div>
+            <div style="text-align: right;">
+                <p style="margin: 0; font-size: 0.9rem;">{alert_text}</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem;">7-day forecast available</p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def create_city_selector(weather_service, current_lang: str = "en") -> tuple:
+    """Create a city selector component for Karnataka cities."""
+    from translations import get_translation
+    
+    st.markdown("#### 🌍 Select Your City")
+    
+    # Get Karnataka cities
+    karnataka_cities = weather_service.get_karnataka_cities()
+    
+    # Create city options
+    city_options = {city["name"]: city["key"] for city in karnataka_cities}
+    
+    # Add search functionality
+    search_term = st.text_input(
+        "🔍 Search for your city:",
+        placeholder="Type to search cities...",
+        help="Start typing to filter cities"
+    )
+    
+    # Filter cities based on search
+    if search_term:
+        filtered_cities = {
+            name: key for name, key in city_options.items() 
+            if search_term.lower() in name.lower()
+        }
+    else:
+        filtered_cities = city_options
+    
+    # Display city selector
+    if filtered_cities:
+        selected_city_display = st.selectbox(
+            get_translation("select_city", current_lang),
+            list(filtered_cities.keys()),
+            help="Select your city for accurate weather data"
+        )
+        selected_city_key = filtered_cities[selected_city_display]
+    else:
+        st.warning("No cities found matching your search. Please try a different search term.")
+        selected_city_display = "Bangalore"
+        selected_city_key = "bangalore"
+    
+    # Display selected city info
+    if selected_city_key in weather_service.fallback_coordinates:
+        coords = weather_service.fallback_coordinates[selected_city_key]
+        st.info(f"📍 Selected: {selected_city_display}, {coords.get('state', 'Karnataka')}")
+    
+    return selected_city_key, selected_city_display
+
+
 def create_mobile_friendly_header() -> None:
     """Create a mobile-friendly header."""
     st.markdown("""

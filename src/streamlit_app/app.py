@@ -28,7 +28,6 @@ from mock_data import (
     create_mock_image_info,
     get_mock_model_performance,
     get_supported_crops,
-    create_mock_sample_images,
     DISEASE_CATEGORIES
 )
 
@@ -36,6 +35,14 @@ from mock_data import (
 from translations import get_translation, create_language_selector, get_current_language
 from weather_service import WeatherService, create_mock_weather_data, get_weather_recommendations
 from market_service import MarketPriceService, create_mock_market_data, get_market_insights
+from components import (
+    create_weather_forecast_chart, 
+    create_weather_alerts_display, 
+    create_weather_recommendations_display,
+    create_current_weather_display,
+    create_weather_summary_card,
+    create_city_selector
+)
 
 
 @st.cache_resource
@@ -242,11 +249,6 @@ def load_model(model_path: str, device: str = "cpu") -> MockDiseaseClassifier:
         return None
 
 
-def create_sample_data_if_needed(data_dir: Path) -> None:
-    """Create sample data if the data directory is empty."""
-    # For mock version, we don't need to create actual sample data
-    # Just return success message
-    st.success("Using mock sample data for demonstration!")
 
 
 def display_prediction_results(
@@ -296,7 +298,7 @@ def display_prediction_results(
     df = pd.DataFrame(pred_data)
     
     # Display as table
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width='stretch')
     
     # Create confidence bar chart
     fig = px.bar(
@@ -313,7 +315,7 @@ def display_prediction_results(
         yaxis_title="Disease",
         height=400
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     # Display disease information
     disease_info = classifier.get_disease_info(top_pred['class_name'])
@@ -397,8 +399,14 @@ def main():
     
     # Location selection for weather
     st.sidebar.markdown("### 🌍 Location")
-    city = st.sidebar.text_input("City", value="Mysore", help="Enter your city for weather data")
-    state = st.sidebar.text_input("State", value="Karnataka", help="Enter your state")
+    
+    # Initialize weather service for city selection
+    weather_service = WeatherService()
+    
+    # City selector
+    selected_city_key, selected_city_display = create_city_selector(weather_service, current_lang)
+    city = selected_city_key
+    state = "Karnataka"  # All cities in our list are from Karnataka
     
     # Set the classifier in session state
     st.session_state.classifier = classifier
@@ -436,22 +444,6 @@ def main():
                 help="Upload an image of a plant leaf to detect diseases"
             )
             
-            # Sample images
-            st.markdown("#### 📸 Sample Images")
-            create_sample_data_if_needed(Path("data/plant_diseases"))
-            
-            # Mock sample images
-            sample_images = create_mock_sample_images()
-            if crop_type in sample_images:
-                diseases = sample_images[crop_type]
-                if diseases:
-                    selected_disease = st.selectbox("Select sample disease:", diseases)
-                    
-                    if st.button("Use Sample Image"):
-                        # Create a mock image for demonstration
-                        mock_image = Image.new('RGB', (224, 224), color=(34, 139, 34))  # Green background
-                        st.session_state.mock_sample_image = mock_image
-                        uploaded_file = mock_image
         
         with col2:
             st.markdown("### 🔍 Analysis")
@@ -464,7 +456,7 @@ def main():
                     # Convert UploadedFile to PIL Image
                     image = Image.open(uploaded_file)
                     
-                st.image(image, caption="Uploaded Image", use_container_width=True)
+                st.image(image, caption="Uploaded Image", width='stretch')
                 
                 # Image info
                 image_info = create_mock_image_info(image)
@@ -505,7 +497,7 @@ def main():
                                 st.error(f"Error during prediction: {e}")
                                 st.error(f"Error details: {str(e)}")
             else:
-                st.info("Please upload an image or select a sample image to get started.")
+                st.info("Please upload an image to get started with disease detection.")
     
     with tab2:
         st.markdown("### 🤖 Model Information")
@@ -564,7 +556,7 @@ def main():
                     color_continuous_scale='RdYlGn'
                 )
                 fig.update_layout(height=300)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
     
     with tab3:
         st.markdown(f"### {get_translation('disease_database', current_lang)}")
@@ -584,112 +576,128 @@ def main():
     with tab4:
         st.markdown(f"### {get_translation('weather_forecast', current_lang)}")
         
-        # Initialize weather service
-        weather_service = WeatherService()
+        # Use the weather service already initialized in sidebar
         
-        # Get weather data
+        # Get comprehensive weather data
         with st.spinner("Fetching weather data..."):
-            # Try to get real weather data, fallback to mock
             try:
-                coords = weather_service.get_coordinates(city, state)
-                if coords:
-                    current_weather = weather_service.get_current_weather(coords["latitude"], coords["longitude"])
-                    forecast = weather_service.get_forecast(coords["latitude"], coords["longitude"])
-                    alerts = weather_service.get_weather_alerts(coords["latitude"], coords["longitude"])
+                # Try to get comprehensive weather data
+                weather_data = weather_service.get_comprehensive_weather_data(city, state, "India")
+                if weather_data:
+                    current_weather = weather_data.get("current")
+                    forecast = weather_data.get("forecast", [])
+                    alerts = weather_data.get("alerts", [])
+                    historical = weather_data.get("historical", [])
                 else:
-                    current_weather = None
-                    forecast = None
-                    alerts = []
-            except:
+                    # Fallback to individual calls
+                    coords = weather_service.get_coordinates(city, state)
+                    if coords:
+                        current_weather = weather_service.get_current_weather(coords["latitude"], coords["longitude"])
+                        forecast = weather_service.get_weather_forecast(coords["latitude"], coords["longitude"])
+                        alerts = weather_service.get_weather_alerts(coords["latitude"], coords["longitude"])
+                    else:
+                        current_weather = None
+                        forecast = []
+                        alerts = []
+                        historical = []
+            except Exception as e:
+                st.warning(f"Using mock weather data due to API error: {e}")
                 # Use mock data
                 weather_data = create_mock_weather_data()
                 current_weather = weather_data["current"]
                 forecast = weather_data["forecast"]
                 alerts = weather_data["alerts"]
+                historical = []
         
-        # Display current weather
+        # Display weather summary card
+        if weather_data:
+            create_weather_summary_card(weather_data)
+        
+        # Display current weather with enhanced UI
         if current_weather:
-            st.markdown(f"#### {get_translation('current_weather', current_lang)}")
-            
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric(
-                    get_translation('temperature', current_lang),
-                    f"{current_weather['temperature']:.1f}°C"
-                )
-            
-            with col2:
-                st.metric(
-                    get_translation('humidity', current_lang),
-                    f"{current_weather['humidity']:.0f}%"
-                )
-            
-            with col3:
-                st.metric(
-                    get_translation('rainfall', current_lang),
-                    f"{current_weather['precipitation']:.1f}mm"
-                )
-            
-            with col4:
-                st.metric(
-                    get_translation('wind_speed', current_lang),
-                    f"{current_weather['wind_speed']:.1f} km/h"
-                )
+            create_current_weather_display(current_weather)
         
-        # Display weather alerts
+        # Display weather alerts with enhanced UI
         if alerts:
-            st.markdown(f"#### {get_translation('weather_alert', current_lang)}")
-            for alert in alerts:
-                st.warning(f"{alert['icon']} {alert['message']}")
+            create_weather_alerts_display(alerts)
         
-        # Display forecast
+        # Display enhanced forecast chart
         if forecast:
-            st.markdown("#### 7-Day Forecast")
+            st.markdown("#### 📈 7-Day Weather Forecast")
             
-            # Create forecast chart
-            dates = [day["date"] for day in forecast]
-            max_temps = [day["max_temp"] for day in forecast]
-            min_temps = [day["min_temp"] for day in forecast]
-            precipitation = [day["precipitation"] for day in forecast]
+            # Create enhanced forecast chart
+            forecast_chart = create_weather_forecast_chart(forecast, current_weather, current_lang)
+            if forecast_chart:
+                st.plotly_chart(forecast_chart, width='stretch')
             
-            fig = make_subplots(
-                rows=2, cols=1,
-                subplot_titles=("Temperature Forecast", "Precipitation Forecast"),
-                vertical_spacing=0.1
-            )
+            # Display forecast table
+            st.markdown("#### 📋 Detailed Forecast")
+            import pandas as pd
             
-            # Temperature chart
-            fig.add_trace(
-                go.Scatter(x=dates, y=max_temps, name="Max Temp", line=dict(color="red")),
-                row=1, col=1
-            )
-            fig.add_trace(
-                go.Scatter(x=dates, y=min_temps, name="Min Temp", line=dict(color="blue")),
-                row=1, col=1
-            )
-            
-            # Precipitation chart
-            fig.add_trace(
-                go.Bar(x=dates, y=precipitation, name="Precipitation", marker_color="lightblue"),
-                row=2, col=1
-            )
-            
-            fig.update_layout(height=600, showlegend=True)
-            st.plotly_chart(fig, use_container_width=True)
+            forecast_df = pd.DataFrame(forecast)
+            if not forecast_df.empty:
+                # Format the dataframe for better display
+                display_df = forecast_df[["date", "max_temp", "min_temp", "precipitation", "precipitation_prob", "description"]].copy()
+                display_df.columns = ["Date", "Max Temp (°C)", "Min Temp (°C)", "Precipitation (mm)", "Rain Probability (%)", "Weather"]
+                display_df["Date"] = pd.to_datetime(display_df["Date"]).dt.strftime("%Y-%m-%d")
+                display_df["Max Temp (°C)"] = display_df["Max Temp (°C)"].round(1)
+                display_df["Min Temp (°C)"] = display_df["Min Temp (°C)"].round(1)
+                display_df["Precipitation (mm)"] = display_df["Precipitation (mm)"].round(1)
+                display_df["Rain Probability (%)"] = display_df["Rain Probability (%)"].round(0)
+                
+                st.dataframe(display_df, width='stretch')
         
-        # Weather recommendations
+        # Display weather recommendations with enhanced UI
         if current_weather:
             recommendations = get_weather_recommendations({"current": current_weather, "forecast": forecast}, crop_type)
             if recommendations:
-                st.markdown(f"#### {get_translation('recommendations', current_lang)}")
-                for rec in recommendations:
-                    if rec["priority"] == "high":
-                        st.error(f"{rec['icon']} {rec['message']}")
-                    elif rec["priority"] == "medium":
-                        st.warning(f"{rec['icon']} {rec['message']}")
-                    else:
-                        st.info(f"{rec['icon']} {rec['message']}")
+                create_weather_recommendations_display(recommendations)
+        
+        # Display historical weather data if available
+        if historical:
+            st.markdown("#### 📊 Historical Weather (Last 7 Days)")
+            
+            hist_df = pd.DataFrame(historical)
+            if not hist_df.empty:
+                # Create historical chart
+                hist_fig = go.Figure()
+                
+                hist_fig.add_trace(go.Scatter(
+                    x=hist_df["date"],
+                    y=hist_df["max_temp"],
+                    name="Max Temperature",
+                    line=dict(color="red", width=2),
+                    marker=dict(size=6)
+                ))
+                
+                hist_fig.add_trace(go.Scatter(
+                    x=hist_df["date"],
+                    y=hist_df["min_temp"],
+                    name="Min Temperature",
+                    line=dict(color="blue", width=2),
+                    marker=dict(size=6),
+                    fill="tonexty"
+                ))
+                
+                hist_fig.update_layout(
+                    title="Historical Temperature Trends",
+                    xaxis_title="Date",
+                    yaxis_title="Temperature (°C)",
+                    height=400,
+                    showlegend=True
+                )
+                
+                st.plotly_chart(hist_fig, width='stretch')
+                
+                # Historical data table
+                hist_display_df = hist_df[["date", "max_temp", "min_temp", "precipitation", "description"]].copy()
+                hist_display_df.columns = ["Date", "Max Temp (°C)", "Min Temp (°C)", "Precipitation (mm)", "Weather"]
+                hist_display_df["Date"] = pd.to_datetime(hist_display_df["Date"]).dt.strftime("%Y-%m-%d")
+                hist_display_df["Max Temp (°C)"] = hist_display_df["Max Temp (°C)"].round(1)
+                hist_display_df["Min Temp (°C)"] = hist_display_df["Min Temp (°C)"].round(1)
+                hist_display_df["Precipitation (mm)"] = hist_display_df["Precipitation (mm)"].round(1)
+                
+                st.dataframe(hist_display_df, width='stretch')
     
     with tab5:
         st.markdown(f"### {get_translation('market_prices', current_lang)}")
@@ -717,7 +725,7 @@ def main():
                 # Display prices in a table
                 import pandas as pd
                 df = pd.DataFrame(crop_prices)
-                st.dataframe(df[["commodity", "variety", "market", "modal_price", "date"]], use_container_width=True)
+                st.dataframe(df[["commodity", "variety", "market", "modal_price", "date"]], width='stretch')
                 
                 # Price trends
                 st.markdown("#### Price Trends")
@@ -740,7 +748,7 @@ def main():
                         yaxis_title="Price (₹/quintal)",
                         height=400
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 
                 # Market recommendations
                 recommendations = market_service.get_market_recommendations(prices, crop_type)
@@ -759,7 +767,7 @@ def main():
                 # Show all prices
                 import pandas as pd
                 df = pd.DataFrame(prices)
-                st.dataframe(df[["commodity", "variety", "market", "modal_price", "date"]], use_container_width=True)
+                st.dataframe(df[["commodity", "variety", "market", "modal_price", "date"]], width='stretch')
         
         # Market insights
         if prices:
